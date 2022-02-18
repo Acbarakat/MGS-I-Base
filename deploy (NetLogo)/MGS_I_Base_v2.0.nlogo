@@ -5,20 +5,21 @@ extensions [cf]
 ; General variables.
 globals
 [ percent-of-contributors     ; The current percent of agents that are contributors.
-  equilibrium-ticks
-  last-contribs
+  max-equilibrium-ticks       ; The max number of ticks where nothing changes before stopping
+  last-contribs               ; Track the last state of agentsets
   effort ]                    ; Agents need effort to provide prosocial common-pool behavior and withstand pressure. The constant sets a limit to how much prosocial common-pool behavior an agent can contribute in a group and there is a 1:1 relationship between the two.
 
 ; Agent-specific variables.
 turtles-own
 [ contribution               ; A dynamic categorical (effort or 0) variable indicating the amount an agent contributes to a group.
-  skill ]
+  skill ]                    ; A skill that the agent has
 
 ; Initialize the model with the parameter settings in the user interface.
+; Agent variants are evenly distributed by the max skill_variants based of thier who id#
 to setup
   clear-all
   set effort 1
-  set equilibrium-ticks 25
+  set max-equilibrium-ticks 25
   set last-contribs -1
   ask patches
   [ set pcolor black
@@ -53,10 +54,10 @@ to go
   potentially-changing-behavior
   update-globals
   if turtles with [ contribution = effort ] = last-contribs
-      [ set equilibrium-ticks equilibrium-ticks - 1]
+      [ set max-equilibrium-ticks max-equilibrium-ticks - 1]
   if count turtles with [ contribution = effort ] = 0 or
     count turtles with [ contribution = effort ] = count turtles or
-    equilibrium-ticks <= 0
+    max-equilibrium-ticks <= 0
     [ stop ]
   tick
   set last-contribs turtles with [ contribution = effort ]
@@ -75,6 +76,7 @@ to potentially-moving
         ask my-links [die] ] ] ]
 end
 
+; Calculate synergy based off neighbhoors and apply bonuses
 to-report turtle-synergy [turtle1]
   let myskill skill
   let diversity_synergy synergy * count turtles in-radius group_radius with [ contribution = effort and skill != myskill ] * diversity_bonus
@@ -340,7 +342,7 @@ homogenity_bonus
 homogenity_bonus
 0
 2
-0.5
+1.0
 .1
 1
 NIL
@@ -355,7 +357,7 @@ group_radius
 group_radius
 1
 2.5
-1.0
+1.5
 .5
 1
 NIL
