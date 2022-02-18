@@ -1,18 +1,25 @@
-; The Multilevel Group Selection I (MGS I) v2.0
+; The Multilevel Group Selection I (MGS I) v2.0-abarakat
+
+extensions [cf]
 
 ; General variables.
 globals
 [ percent-of-contributors     ; The current percent of agents that are contributors.
+  equilibrium-ticks
+  last-contribs
   effort ]                    ; Agents need effort to provide prosocial common-pool behavior and withstand pressure. The constant sets a limit to how much prosocial common-pool behavior an agent can contribute in a group and there is a 1:1 relationship between the two.
 
 ; Agent-specific variables.
 turtles-own
-[ contribution ]              ; A dynamic categorical (effort or 0) variable indicating the amount an agent contributes to a group.
+[ contribution               ; A dynamic categorical (effort or 0) variable indicating the amount an agent contributes to a group.
+  skill ]
 
 ; Initialize the model with the parameter settings in the user interface.
 to setup
   clear-all
   set effort 1
+  set equilibrium-ticks 25
+  set last-contribs -1
   ask patches
   [ set pcolor black
     if count turtles < ( density * 4 * max-pxcor * max-pycor ) [ sprout 1 [set size 1] ] ] ; Use the number of patches and density to distribute agents.
@@ -23,6 +30,19 @@ to setup
     [ set color blue
       set contribution 0 ] ]
   set-default-shape turtles "square"
+  ask turtles
+  [ let x who mod skill_variants
+    (cf:ifelse
+      x = 0 [
+        set shape "sheep"
+        set skill "wool" ]
+      x = 1 [
+        set shape "fish"
+        set skill "swim" ]
+      x = 2 [
+        set shape "cow"
+        set skill "eat grass" ]
+      [ print "bad variant!" ])]
   set percent-of-contributors (count turtles with [contribution = effort]  / count turtles) * 100
   reset-ticks
 end
@@ -32,40 +52,59 @@ to go
   potentially-moving
   potentially-changing-behavior
   update-globals
+  if turtles with [ contribution = effort ] = last-contribs
+      [ set equilibrium-ticks equilibrium-ticks - 1]
   if count turtles with [ contribution = effort ] = 0 or
-    count turtles with [ contribution = effort ] = count turtles
+    count turtles with [ contribution = effort ] = count turtles or
+    equilibrium-ticks <= 0
     [ stop ]
   tick
+  set last-contribs turtles with [ contribution = effort ]
 end
 
 ; Agents who are not able to withstand pressure move to one of the closest spots.
 to potentially-moving
   ask turtles
   [ ifelse contribution = effort
-    [ if ( synergy * effort * count turtles in-radius 1.5 with [ contribution = effort ] / count turtles in-radius 1.5 ) <= pressure
-      [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ] ] ]
-    [ if ( effort + synergy * effort * count turtles in-radius 1.5 with [ contribution = effort ] / count turtles in-radius 1.5 ) <= pressure
-      [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ] ] ] ]
+    [ if ( turtle-synergy self / count turtles in-radius group_radius ) <= pressure
+      [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ]
+        ask my-links [die]
+        create-links-with other turtles in-radius group_radius with [ contribution = effort ] ] ]
+    [ if ( effort + turtle-synergy self / count turtles in-radius group_radius ) <= pressure
+      [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ]
+        ask my-links [die] ] ] ]
+end
+
+to-report turtle-synergy [turtle1]
+  let myskill skill
+  let diversity_synergy synergy * count turtles in-radius group_radius with [ contribution = effort and skill != myskill ] * diversity_bonus
+  let homogenity_synergy synergy * count turtles in-radius group_radius with [ contribution = effort and skill = myskill ] * homogenity_bonus
+
+  report (diversity_synergy + homogenity_synergy) * effort
 end
 
 ; Agents who are not able to withstand pressure change their begavior.
 to potentially-changing-behavior
   ask turtles
-  [ ifelse ( count turtles in-radius 1.5 = 1 )
+  [ ifelse ( count turtles in-radius group_radius = 1 )
     [ if ( effort <= pressure )
       [ ifelse color = orange
         [ set color blue
+          ask my-links [die]
           set contribution 0 ]
         [ set color orange
+          create-links-with other turtles in-radius group_radius with [ contribution = effort ]
           set contribution effort ] ] ]
     [ ifelse ( contribution = effort )
-      [ if ( synergy * effort * count turtles in-radius 1.5 with [ contribution = effort ] /
-          count turtles in-radius 1.5 <= pressure )
+      [ if ( turtle-synergy self /
+          count turtles in-radius group_radius <= pressure )
         [ set color blue
-          set contribution 0 ] ]
-      [ if ( effort + synergy * effort * count turtles in-radius 1.5 with [ contribution = effort ] /
-          count turtles in-radius 1.5 <= pressure )
+          set contribution 0
+          ask my-links [die] ] ]
+      [ if ( effort + turtle-synergy self /
+          count turtles in-radius group_radius <= pressure )
         [ set color orange
+          create-links-with other turtles in-radius group_radius with [ contribution = effort ]
           set contribution effort ] ] ] ]
 end
 
@@ -276,6 +315,66 @@ ticks
 17
 1
 11
+
+SLIDER
+25
+247
+197
+280
+diversity_bonus
+diversity_bonus
+0
+2
+2.0
+.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+25
+293
+197
+326
+homogenity_bonus
+homogenity_bonus
+0
+2
+0.5
+.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+329
+296
+501
+329
+group_radius
+group_radius
+1
+2.5
+1.0
+.5
+1
+NIL
+HORIZONTAL
+
+SLIDER
+26
+340
+198
+373
+skill_variants
+skill_variants
+1
+3
+3.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -668,7 +767,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.2.0
+NetLogo 6.2.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
