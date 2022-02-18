@@ -330,7 +330,7 @@ diversity_bonus
 diversity_bonus
 0
 2
-2.0
+1.0
 .1
 1
 NIL
@@ -345,7 +345,7 @@ homogenity_bonus
 homogenity_bonus
 0
 2
-0.5
+1.0
 .1
 1
 NIL
