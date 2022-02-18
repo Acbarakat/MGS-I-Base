@@ -43,6 +43,9 @@ to setup
       x = 2 [
         set shape "cow"
         set skill "eat grass" ]
+      x = 3 [
+        set shape "wolf"
+        set skill "howl" ]
       [ print "bad variant!" ])]
   set percent-of-contributors (count turtles with [contribution = effort]  / count turtles) * 100
   reset-ticks
@@ -342,17 +345,17 @@ homogenity_bonus
 homogenity_bonus
 0
 2
-1.0
+0.5
 .1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-329
-296
-501
-329
+27
+389
+199
+422
 group_radius
 group_radius
 1
@@ -371,8 +374,8 @@ SLIDER
 skill_variants
 skill_variants
 1
-3
-3.0
+4
+4.0
 1
 1
 NIL
