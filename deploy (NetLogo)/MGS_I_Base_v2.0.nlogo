@@ -14,6 +14,10 @@ turtles-own
 [ contribution               ; A dynamic categorical (effort or 0) variable indicating the amount an agent contributes to a group.
   skill ]                    ; A skill that the agent has
 
+; Environment-specific variables.
+patches-own
+[ resource ]                    ; The skill this patch synergies with
+
 ; Initialize the model with the parameter settings in the user interface.
 ; Agent variants are evenly distributed by the max skill_variants based of thier who id#
 to setup
@@ -22,8 +26,24 @@ to setup
   set max-equilibrium-ticks 25
   set last-contribs -1
   ask patches
-  [ set pcolor black
-    if count turtles < ( density * 4 * max-pxcor * max-pycor ) [ sprout 1 [set size 1] ] ] ; Use the number of patches and density to distribute agents.
+  [ if count turtles < ( density * 4 * max-pxcor * max-pycor ) [ sprout 1 [set size 1] ] ; Use the number of patches and density to distribute agents.
+    let x pxcor mod skill_variants
+    if random_environment = true [set x random skill_variants]
+    (cf:ifelse
+      x = 0 [
+        set pcolor black
+        set resource "wool" ]
+      x = 1 [
+        set pcolor violet
+        set resource "swim" ]
+      x = 2 [
+        set pcolor green
+        set resource "eat grass" ]
+      x = 3 [
+        set pcolor gray
+        set resource "howl" ]
+      [ print "bad patch!" ])
+  ]
   ask turtles
   [ ifelse count turtles with [ contribution = effort ] < ( initial-percent-of-contributors / 100 * count turtles ) ; Use the initial percent of contributors to assign initial agent type.
     [ set color orange
@@ -70,11 +90,11 @@ end
 to potentially-moving
   ask turtles
   [ ifelse contribution = effort
-    [ if ( turtle-synergy self / count turtles in-radius group_radius ) <= pressure
+    [ if ( turtle-synergy self / count turtles in-radius group_radius ) <= turtle-pressure self
       [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ]
         ask my-links [die]
         create-links-with other turtles in-radius group_radius with [ contribution = effort ] ] ]
-    [ if ( effort + turtle-synergy self / count turtles in-radius group_radius ) <= pressure
+    [ if ( effort + turtle-synergy self / count turtles in-radius group_radius ) <= turtle-pressure self
       [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ]
         ask my-links [die] ] ] ]
 end
@@ -88,11 +108,20 @@ to-report turtle-synergy [turtle1]
   report (diversity_synergy + homogenity_synergy) * effort
 end
 
+; Calculate pressure based off patches
+to-report turtle-pressure [turtle1]
+  let myskill skill
+  let environment_pressure 1.0
+  if [resource] of patch-here = myskill [set environment_pressure environment_bonus]
+
+  report environment_pressure * pressure
+end
+
 ; Agents who are not able to withstand pressure change their begavior.
 to potentially-changing-behavior
   ask turtles
   [ ifelse ( count turtles in-radius group_radius = 1 )
-    [ if ( effort <= pressure )
+    [ if ( effort <= turtle-pressure self )
       [ ifelse color = orange
         [ set color blue
           ask my-links [die]
@@ -102,12 +131,12 @@ to potentially-changing-behavior
           set contribution effort ] ] ]
     [ ifelse ( contribution = effort )
       [ if ( turtle-synergy self /
-          count turtles in-radius group_radius <= pressure )
+          count turtles in-radius group_radius <= turtle-pressure self  )
         [ set color blue
           set contribution 0
           ask my-links [die] ] ]
       [ if ( effort + turtle-synergy self /
-          count turtles in-radius group_radius <= pressure )
+          count turtles in-radius group_radius <= turtle-pressure self  )
         [ set color orange
           create-links-with other turtles in-radius group_radius with [ contribution = effort ]
           set contribution effort ] ] ] ]
@@ -375,11 +404,37 @@ skill_variants
 skill_variants
 1
 4
-4.0
+2.0
 1
 1
 NIL
 HORIZONTAL
+
+SLIDER
+288
+343
+460
+376
+environment_bonus
+environment_bonus
+0
+2
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+289
+298
+462
+331
+random_environment
+random_environment
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
