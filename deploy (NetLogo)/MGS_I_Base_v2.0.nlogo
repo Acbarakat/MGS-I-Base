@@ -112,7 +112,7 @@ end
 to-report turtle-pressure [turtle1]
   let myskill skill
   let environment_pressure 1.0
-  if [resource] of patch-here = myskill [set environment_pressure environment_bonus]
+  if [resource] of patch-here = myskill [set environment_pressure environment_pressure_bonus]
 
   report environment_pressure * pressure
 end
@@ -404,7 +404,7 @@ skill_variants
 skill_variants
 1
 4
-2.0
+3.0
 1
 1
 NIL
@@ -413,13 +413,13 @@ HORIZONTAL
 SLIDER
 288
 343
-460
+500
 376
-environment_bonus
-environment_bonus
+environment_pressure_bonus
+environment_pressure_bonus
 0
 2
-1.0
+0.0
 0.1
 1
 NIL
@@ -432,7 +432,7 @@ SWITCH
 331
 random_environment
 random_environment
-1
+0
 1
 -1000
 
