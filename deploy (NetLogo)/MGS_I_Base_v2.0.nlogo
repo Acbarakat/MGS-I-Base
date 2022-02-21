@@ -91,12 +91,23 @@ to potentially-moving
   ask turtles
   [ ifelse contribution = effort
     [ if ( turtle-synergy self / count turtles in-radius group_radius ) <= turtle-pressure self
-      [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ]
-        ask my-links [die]
+      [ move-turtle self
         create-links-with other turtles in-radius group_radius with [ contribution = effort ] ] ]
     [ if ( effort + turtle-synergy self / count turtles in-radius group_radius ) <= turtle-pressure self
-      [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ]
+      [ move-turtle self
         ask my-links [die] ] ] ]
+end
+
+to move-turtle [turtle1]
+  let myskill skill
+  ifelse ( move_based_on_environment = false or environment_pressure_bonus = 1.0 )
+    [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ] ]
+    [ ifelse (environment_pressure_bonus > 1.0)
+      [move-to min-one-of patches with [ not any? turtles-here and resource = myskill ] [ distance myself ]]
+      [move-to min-one-of patches with [ not any? turtles-here and resource != myskill ] [ distance myself ]]
+  ]
+
+  ask my-links [die]
 end
 
 ; Calculate synergy based off neighbhoors and apply bonuses
@@ -411,15 +422,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-288
-343
-500
+267
 376
+479
+409
 environment_pressure_bonus
 environment_pressure_bonus
 0
 2
-0.0
+0.9
 0.1
 1
 NIL
@@ -432,6 +443,17 @@ SWITCH
 331
 random_environment
 random_environment
+0
+1
+-1000
+
+SWITCH
+264
+337
+487
+370
+move_based_on_environment
+move_based_on_environment
 0
 1
 -1000
