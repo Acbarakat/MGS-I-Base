@@ -102,7 +102,7 @@ to move-turtle [turtle1]
   let myskill skill
   ifelse ( move_based_on_environment = false or environment_pressure_bonus = 1.0 )
     [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ] ]
-    [ ifelse (environment_pressure_bonus > 1.0)
+    [ ifelse (environment_pressure_bonus < 1.0)
       [move-to min-one-of patches with [ not any? turtles-here and resource = myskill ] [ distance myself ]]
       [move-to min-one-of patches with [ not any? turtles-here and resource != myskill ] [ distance myself ]]
   ]
@@ -430,7 +430,7 @@ environment_pressure_bonus
 environment_pressure_bonus
 0
 2
-0.9
+1.0
 0.1
 1
 NIL
@@ -443,7 +443,7 @@ SWITCH
 331
 random_environment
 random_environment
-0
+1
 1
 -1000
 
@@ -454,7 +454,7 @@ SWITCH
 370
 move_based_on_environment
 move_based_on_environment
-0
+1
 1
 -1000
 
