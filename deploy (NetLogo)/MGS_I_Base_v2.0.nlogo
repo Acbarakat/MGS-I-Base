@@ -90,40 +90,36 @@ end
 to potentially-moving
   ask turtles
   [ ifelse contribution = effort
-    [ if ( turtle-synergy self / count turtles in-radius group_radius ) <= turtle-pressure self
-      [ move-turtle self
+    [ if ( turtle-synergy / count turtles in-radius group_radius ) <= turtle-pressure
+      [ move-turtle
         create-links-with other turtles in-radius group_radius with [ contribution = effort ] ] ]
-    [ if ( effort + turtle-synergy self / count turtles in-radius group_radius ) <= turtle-pressure self
-      [ move-turtle self
+    [ if ( effort + turtle-synergy / count turtles in-radius group_radius ) <= turtle-pressure
+      [ move-turtle
         ask my-links [die] ] ] ]
 end
 
-to move-turtle [turtle1]
-  let myskill skill
+to move-turtle
   ifelse ( move_based_on_environment = false or environment_pressure_bonus = 1.0 )
     [ move-to min-one-of patches with [ not any? turtles-here ] [ distance myself ] ]
     [ ifelse (environment_pressure_bonus < 1.0)
-      [move-to min-one-of patches with [ not any? turtles-here and resource = myskill ] [ distance myself ]]
-      [move-to min-one-of patches with [ not any? turtles-here and resource != myskill ] [ distance myself ]]
+      [move-to min-one-of patches with [ not any? turtles-here and resource = [skill] of myself ] [ distance myself ]]
+      [move-to min-one-of patches with [ not any? turtles-here and resource != [skill] of myself ] [ distance myself ]]
   ]
-
   ask my-links [die]
 end
 
 ; Calculate synergy based off neighbhoors and apply bonuses
-to-report turtle-synergy [turtle1]
-  let myskill skill
-  let diversity_synergy synergy * count turtles in-radius group_radius with [ contribution = effort and skill != myskill ] * diversity_bonus
-  let homogenity_synergy synergy * count turtles in-radius group_radius with [ contribution = effort and skill = myskill ] * homogenity_bonus
+to-report turtle-synergy
+  let diversity_synergy  count turtles in-radius group_radius with [ contribution = effort and skill != [skill] of myself ] * diversity_bonus
+  let homogenity_synergy count turtles in-radius group_radius with [ contribution = effort and skill = [skill] of myself ] * homogenity_bonus
 
-  report (diversity_synergy + homogenity_synergy) * effort
+  report (diversity_synergy + homogenity_synergy) * effort * synergy
 end
 
 ; Calculate pressure based off patches
-to-report turtle-pressure [turtle1]
-  let myskill skill
+to-report turtle-pressure
   let environment_pressure 1.0
-  if [resource] of patch-here = myskill [set environment_pressure environment_pressure_bonus]
+  if [resource] of patch-here = [skill] of self [set environment_pressure environment_pressure_bonus]
 
   report environment_pressure * pressure
 end
@@ -132,7 +128,7 @@ end
 to potentially-changing-behavior
   ask turtles
   [ ifelse ( count turtles in-radius group_radius = 1 )
-    [ if ( effort <= turtle-pressure self )
+    [ if ( effort <= turtle-pressure )
       [ ifelse color = orange
         [ set color blue
           ask my-links [die]
@@ -141,13 +137,13 @@ to potentially-changing-behavior
           create-links-with other turtles in-radius group_radius with [ contribution = effort ]
           set contribution effort ] ] ]
     [ ifelse ( contribution = effort )
-      [ if ( turtle-synergy self /
-          count turtles in-radius group_radius <= turtle-pressure self  )
+      [ if ( turtle-synergy /
+          count turtles in-radius group_radius <= turtle-pressure  )
         [ set color blue
           set contribution 0
           ask my-links [die] ] ]
-      [ if ( effort + turtle-synergy self /
-          count turtles in-radius group_radius <= turtle-pressure self  )
+      [ if ( effort + turtle-synergy /
+          count turtles in-radius group_radius <= turtle-pressure  )
         [ set color orange
           create-links-with other turtles in-radius group_radius with [ contribution = effort ]
           set contribution effort ] ] ] ]
@@ -219,9 +215,9 @@ initial-percent-of-contributors
 HORIZONTAL
 
 BUTTON
-15
+12
 191
-72
+69
 224
 setup
 setup
@@ -369,7 +365,7 @@ SLIDER
 diversity_bonus
 diversity_bonus
 0
-2
+3
 1.0
 .1
 1
@@ -384,7 +380,7 @@ SLIDER
 homogenity_bonus
 homogenity_bonus
 0
-2
+3
 1.0
 .1
 1
@@ -415,7 +411,7 @@ skill_variants
 skill_variants
 1
 4
-3.0
+1.0
 1
 1
 NIL
